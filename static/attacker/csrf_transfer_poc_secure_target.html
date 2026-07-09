@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>Congratulations! Claim your free gift card</title>
+</head>
+<body>
+    <!--
+        Same forged-request idea as csrf_transfer_poc.html, but aimed at the
+        SECURE transfer endpoint instead of the vulnerable one. Use this to
+        show, on camera, that the exact same attack fails once the endpoint
+        requires a CSRF token and stops accepting GET:
+        - The <img> GET vector does nothing, because secure-transfer only
+          accepts POST.
+        - The auto-submitting POST form still cannot succeed, because it has
+          no way to know the csrf_token value tied to the victim's session -
+          that value is never exposed to a different origin.
+
+        Open this file the same way as csrf_transfer_poc.html (double-click
+        it, or serve it from a different port) while logged in to the app in
+        another tab, then refresh /modules/csrf/ and show the balance did
+        NOT change.
+    -->
+    <script>
+        const APP_ORIGIN = "http://127.0.0.1:5000";
+        const TARGET_USERNAME = "attacker";
+        const AMOUNT = "500";
+    </script>
+
+    <h1>You just won a prize! Loading...</h1>
+
+    <img alt="" style="display:none" src="">
+    <script>
+        document.currentScript.previousElementSibling.src =
+            `${APP_ORIGIN}/modules/csrf/secure-transfer?to=${TARGET_USERNAME}&amount=${AMOUNT}`;
+    </script>
+
+    <form id="csrf-form" method="POST" style="display:none">
+        <input type="hidden" name="to" value="attacker">
+        <input type="hidden" name="amount" value="500">
+        <!-- No csrf_token field here - an attacker has no way to obtain one. -->
+    </form>
+    <script>
+        document.getElementById("csrf-form").action =
+            `${APP_ORIGIN}/modules/csrf/secure-transfer`;
+        document.getElementById("csrf-form").submit();
+    </script>
+</body>
+</html>
