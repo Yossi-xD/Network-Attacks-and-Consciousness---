@@ -1,0 +1,32 @@
+<div class="employee-directory">
+    {% for employee in employees %}
+        <a class="employee-card" href="{{ url_for('portal.employee_detail', employee_id=employee.id) }}">
+            <div class="employee-avatar">{{ employee.full_name[:2].upper() }}</div>
+            <div class="employee-main">
+                <div class="d-flex justify-content-between gap-3">
+                    <div>
+                        <h2>{{ employee.full_name }}</h2>
+                        <p>{{ employee.job_title }}</p>
+                    </div>
+                    <span class="badge rounded-pill {% if employee.status == 'Active' %}text-bg-success{% else %}text-bg-warning{% endif %}">
+                        {{ employee.status if employee.status != "Onboarding" else "Away" }}
+                    </span>
+                </div>
+                <div class="employee-meta">
+                    <span><i class="bi bi-building"></i>{{ employee.department }}</span>
+                    <span><i class="bi bi-envelope"></i>{{ employee.email }}</span>
+                    <span><i class="bi bi-geo-alt"></i>{{ employee.location }}</span>
+                </div>
+            </div>
+        </a>
+    {% else %}
+        <section class="portal-card text-center py-5">
+            <i class="bi bi-search display-6 text-secondary"></i>
+            <h2 class="h5 mt-3">No employees found</h2>
+            <p class="text-secondary mb-0">
+                No directory records matched "{{ search_term }}". Try a name,
+                department, position, or email address.
+            </p>
+        </section>
+    {% endfor %}
+</div>

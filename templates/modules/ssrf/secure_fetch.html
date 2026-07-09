@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+
+{% block title %}Secure Fetch - Employee Portal{% endblock %}
+
+{% block content %}
+<section class="lab-panel">
+    <p class="eyebrow">Restricted Preview</p>
+    <h2>Secure URL Fetch</h2>
+    <p>
+        Only <code>http(s)</code> URLs whose hostname is on a small
+        allow-list, and whose resolved IP address is public (not
+        private/loopback/link-local/reserved), are fetched. Try the same
+        internal URL from the vulnerable lab here and watch it get blocked.
+    </p>
+
+    <form method="post" class="auth-form lab-form">
+        <label for="url">URL to fetch</label>
+        <input id="url" name="url" type="text" value="http://127.0.0.1:5000/internal/secret-report" required>
+        <button type="submit">Fetch (validated)</button>
+    </form>
+
+    {% if target_url %}
+        <div class="query-box" style="margin-top: 20px;">
+            <h3>Requested URL</h3>
+            <pre><code>{{ target_url }}</code></pre>
+        </div>
+    {% endif %}
+
+    {% if result %}
+        <div class="result-box {% if result.success %}result-success{% else %}result-failure{% endif %}">
+            {% if result.success %}
+                <h3>Response ({{ result.status_code }})</h3>
+                <pre style="white-space: pre-wrap;">{{ result.body }}</pre>
+            {% else %}
+                <h3>Request blocked</h3>
+                <p>{{ result.error }}</p>
+            {% endif %}
+        </div>
+    {% endif %}
+
+    <p class="auth-link">
+        <a href="{{ url_for('ssrf.index') }}">Back to SSRF lab</a>
+    </p>
+</section>
+{% endblock %}

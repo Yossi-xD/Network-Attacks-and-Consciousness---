@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+
+{% block title %}XSS Lab - Employee Portal{% endblock %}
+
+{% block content %}
+<section class="lab-panel">
+    <p class="eyebrow">Restricted Preview</p>
+    <h2>Cross-Site Scripting (XSS)</h2>
+    <p>
+        Both walls below post into the same shared comment table. The only
+        difference is how each page renders a comment's content - that
+        difference is the entire attack surface.
+    </p>
+    <p class="warning">
+        Warning: the vulnerable wall executes anything posted to it,
+        including &lt;script&gt; tags. Only use it against this local
+        instance.
+    </p>
+
+    <div class="lab-grid">
+        <a class="module-card" href="{{ url_for('xss.vulnerable_wall') }}">
+            <h3>Vulnerable Wall</h3>
+            <p>Comments render with Jinja's <code>|safe</code> filter - unescaped, stored XSS.</p>
+        </a>
+        <a class="module-card" href="{{ url_for('xss.secure_wall') }}">
+            <h3>Secure Wall</h3>
+            <p>Same data, rendered with default auto-escaping - payloads become inert text.</p>
+        </a>
+        <a class="module-card" href="{{ url_for('xss.stolen') }}">
+            <h3>Attacker Loot</h3>
+            <p>Whatever the cookie-theft collector endpoint has captured so far.</p>
+        </a>
+    </div>
+</section>
+{% endblock %}

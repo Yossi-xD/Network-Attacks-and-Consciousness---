@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+
+{% block title %}{{ employee.full_name }} - Employee Portal{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <span class="text-uppercase text-primary small fw-bold">Employee Profile</span>
+        <h1>{{ employee.full_name }}</h1>
+        <p>{{ employee.job_title }} in {{ employee.department }}</p>
+    </div>
+    <a class="btn btn-outline-secondary" href="{{ url_for('portal.employees') }}">
+        <i class="bi bi-arrow-left"></i> Back to directory
+    </a>
+</div>
+
+<div class="row g-4">
+    <div class="col-xl-4">
+        <section class="portal-card profile-summary text-center">
+            <div class="profile-photo mx-auto">{{ employee.initials }}</div>
+            <h2>{{ employee.full_name }}</h2>
+            <p>{{ employee.job_title }}</p>
+            <span class="badge rounded-pill text-bg-success">{{ employee.status }}</span>
+        </section>
+    </div>
+    <div class="col-xl-8">
+        <section class="portal-card mb-4">
+            <div class="card-heading">
+                <h2>Contact Information</h2>
+                <i class="bi bi-person-lines-fill text-primary"></i>
+            </div>
+            <div class="details-grid">
+                <div><span>Email</span><strong>{{ employee.email }}</strong></div>
+                <div><span>Phone</span><strong>{{ employee.phone }}</strong></div>
+                <div><span>Manager</span><strong>{{ employee.manager }}</strong></div>
+                <div><span>Office</span><strong>{{ employee.office }}</strong></div>
+            </div>
+        </section>
+        <section class="portal-card mb-4">
+            <h2>Biography</h2>
+            <p class="text-secondary mb-0">{{ employee.bio }}</p>
+        </section>
+        <section class="portal-card">
+            <h2>Recent Activity</h2>
+            <ul class="clean-list">
+                {% for item in employee.activity %}
+                    <li><i class="bi bi-check-circle text-success"></i>{{ item }}</li>
+                {% endfor %}
+            </ul>
+        </section>
+    </div>
+</div>
+{% endblock %}

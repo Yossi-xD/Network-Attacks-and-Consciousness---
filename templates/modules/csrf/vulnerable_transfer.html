@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+
+{% block title %}Vulnerable Transfer - Employee Portal{% endblock %}
+
+{% block content %}
+<section class="lab-panel">
+    <p class="eyebrow">Restricted Preview</p>
+    <h2>Vulnerable Transfer</h2>
+    <p class="warning">
+        Warning: this form posts to an endpoint with no CSRF token, and that
+        endpoint also accepts GET. Open
+        <code>static/attacker/csrf_transfer_poc.html</code> from a different
+        origin while logged in here to see a forged transfer fire on its own.
+    </p>
+
+    <div class="wallet-badge">
+        <i class="bi bi-wallet2"></i>
+        Your balance: {{ balance }} points
+    </div>
+
+    <form method="post" action="{{ url_for('csrf.vulnerable_transfer') }}" class="auth-form lab-form" style="margin-top: 20px;">
+        <label for="to">Send to (username)</label>
+        <input id="to" name="to" type="text" value="attacker" required>
+
+        <label for="amount">Amount</label>
+        <input id="amount" name="amount" type="number" min="1" value="100" required>
+
+        <button type="submit">Send points</button>
+    </form>
+
+    {% if result %}
+        <div class="result-box {% if result[0] %}result-success{% else %}result-failure{% endif %}" style="margin-top: 16px;">
+            <p>{{ result[1] }}</p>
+        </div>
+    {% endif %}
+
+    <p class="auth-link">
+        <a href="{{ url_for('csrf.index') }}">Back to CSRF lab</a>
+    </p>
+</section>
+{% endblock %}

@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+
+{% block title %}Settings - Employee Portal{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <span class="text-uppercase text-primary small fw-bold">Preferences</span>
+        <h1>Settings</h1>
+        <p>Manage account, notification, security, appearance, and language preferences.</p>
+    </div>
+</div>
+
+<div class="settings-stack">
+    <section class="portal-card settings-section">
+        <i class="bi bi-person-gear"></i>
+        <div>
+            <h2>Account</h2>
+            <p>Update display name, department visibility, and account recovery details.</p>
+        </div>
+        <button class="btn btn-outline-primary" type="button">Manage</button>
+    </section>
+    <section class="portal-card settings-section">
+        <i class="bi bi-bell"></i>
+        <div>
+            <h2>Notifications</h2>
+            <p>Choose how you receive announcements, message alerts, and workflow updates.</p>
+        </div>
+        <span class="badge text-bg-success">Enabled</span>
+    </section>
+    <section class="portal-card settings-section">
+        <i class="bi bi-shield-lock"></i>
+        <div>
+            <h2>Security</h2>
+            <p>Review session alerts, password settings, and account access notifications.</p>
+        </div>
+        <span class="badge text-bg-primary">Standard</span>
+    </section>
+    <section class="portal-card settings-section">
+        <i class="bi bi-palette"></i>
+        <div>
+            <h2>Appearance</h2>
+            <p>Customize density, theme preference, and dashboard layout options.</p>
+        </div>
+        <span class="badge text-bg-light">System</span>
+    </section>
+    <section class="portal-card settings-section">
+        <i class="bi bi-translate"></i>
+        <div>
+            <h2>Language</h2>
+            <p>Select preferred language, region, date format, and time zone.</p>
+        </div>
+        <span class="badge text-bg-light">English</span>
+    </section>
+</div>
+{% endblock %}

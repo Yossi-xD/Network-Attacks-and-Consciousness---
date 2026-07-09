@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+
+{% block title %}Login - Employee Portal{% endblock %}
+
+{% block content %}
+<section class="auth-panel">
+    <h2>Log In</h2>
+    <p>Use your company account to access the employee dashboard.</p>
+
+    {% with messages = get_flashed_messages() %}
+        {% if messages %}
+            <div class="messages">
+                {% for message in messages %}
+                    <p>{{ message }}</p>
+                {% endfor %}
+            </div>
+        {% endif %}
+    {% endwith %}
+
+    <form method="post" class="auth-form">
+        <label for="username">Username</label>
+        <input id="username" name="username" type="text" required>
+
+        <label for="password">Password</label>
+        <input id="password" name="password" type="password" required>
+
+        <button type="submit">Log In</button>
+    </form>
+
+    <p class="auth-link">
+        Need an account?
+        <a href="{{ url_for('auth.register') }}">Register</a>
+    </p>
+</section>
+{% endblock %}

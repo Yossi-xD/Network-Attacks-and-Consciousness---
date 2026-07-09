@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+
+{% block title %}Messages - Employee Portal{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <span class="text-uppercase text-primary small fw-bold">Inbox</span>
+        <h1>Messages</h1>
+        <p>Review recent internal messages and operational notifications.</p>
+    </div>
+</div>
+
+<div class="row g-4">
+    <div class="col-xl-3">
+        <section class="portal-card">
+            <nav class="message-folders" aria-label="Message folders">
+                <a class="active" href="#"><i class="bi bi-inbox"></i>Inbox <span>4</span></a>
+                <a href="#"><i class="bi bi-star"></i>Starred</a>
+                <a href="#"><i class="bi bi-send"></i>Sent</a>
+                <a href="#"><i class="bi bi-archive"></i>Archived</a>
+            </nav>
+        </section>
+    </div>
+    <div class="col-xl-9">
+        <section class="portal-card p-0 overflow-hidden">
+            {% for message in messages %}
+                <article class="inbox-message {% if message.unread %}unread{% endif %}">
+                    <span class="unread-dot"></span>
+                    <div>
+                        <div class="d-flex align-items-center gap-2 flex-wrap">
+                            <strong>{{ message.sender }}</strong>
+                            <span class="text-secondary small">{{ message.date }}</span>
+                            {% if message.unread %}
+                                <span class="badge text-bg-primary">Unread</span>
+                            {% endif %}
+                        </div>
+                        <h2>{{ message.subject }}</h2>
+                        <p>{{ message.preview }}</p>
+                    </div>
+                    <i class="bi bi-chevron-right text-secondary"></i>
+                </article>
+            {% endfor %}
+        </section>
+    </div>
+</div>
+{% endblock %}

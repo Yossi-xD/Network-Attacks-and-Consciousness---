@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+
+{% block title %}Security Labs - Employee Portal{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <span class="text-uppercase text-primary small fw-bold">OWASP Vulnerability Assessment Platform</span>
+        <h1>Security Labs</h1>
+        <p>
+            Every lab below runs against this same employee portal. Each one
+            demonstrates a real vulnerability first, then a mitigated version,
+            so attack traffic and defended traffic can be compared directly in
+            Wireshark and Burp Suite.
+        </p>
+    </div>
+</div>
+
+<div class="lab-grid module-grid">
+    {% for lab in labs %}
+        <a class="module-card" href="{{ url_for(lab.endpoint) }}">
+            <h3>{{ lab.title }}</h3>
+            <p>{{ lab.summary }}</p>
+            <span class="badge-owner">{{ lab.owner }}</span>
+        </a>
+    {% endfor %}
+</div>
+{% endblock %}

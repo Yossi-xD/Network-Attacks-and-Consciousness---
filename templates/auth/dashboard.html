@@ -1,0 +1,119 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - Employee Portal{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <span class="text-uppercase text-primary small fw-bold">Dashboard</span>
+        <h1>Welcome back, {{ session["username"] }}</h1>
+        <p>Monitor workforce updates, inbox activity, and operational priorities.</p>
+    </div>
+    <a class="btn btn-primary" href="{{ url_for('portal.employees') }}">
+        <i class="bi bi-search"></i> Find employee
+    </a>
+</div>
+
+<div class="row g-4 mb-4">
+    <div class="col-sm-6 col-xl-3">
+        <div class="metric-card">
+            <span class="metric-icon blue"><i class="bi bi-people"></i></span>
+            <div>
+                <p>Employees</p>
+                <strong>126</strong>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-xl-3">
+        <div class="metric-card">
+            <span class="metric-icon green"><i class="bi bi-diagram-3"></i></span>
+            <div>
+                <p>Departments</p>
+                <strong>8</strong>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-xl-3">
+        <div class="metric-card">
+            <span class="metric-icon amber"><i class="bi bi-envelope"></i></span>
+            <div>
+                <p>Messages</p>
+                <strong>12</strong>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-xl-3">
+        <div class="metric-card">
+            <span class="metric-icon purple"><i class="bi bi-megaphone"></i></span>
+            <div>
+                <p>Announcements</p>
+                <strong>4</strong>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4">
+    <div class="col-xl-7">
+        <section class="portal-card h-100">
+            <div class="card-heading">
+                <h2>Recent Activity</h2>
+                <span class="badge text-bg-light">Today</span>
+            </div>
+            <div class="activity-timeline">
+                <div><i class="bi bi-person-check"></i><span>People Operations completed onboarding for 3 employees.</span></div>
+                <div><i class="bi bi-laptop"></i><span>IT assigned replacement devices for the Engineering team.</span></div>
+                <div><i class="bi bi-receipt"></i><span>Finance approved pending Q2 travel expenses.</span></div>
+                <div><i class="bi bi-megaphone"></i><span>Leadership posted a quarterly meeting reminder.</span></div>
+            </div>
+        </section>
+    </div>
+    <div class="col-xl-5">
+        <section class="portal-card h-100">
+            <div class="card-heading">
+                <h2>Upcoming Events</h2>
+                <i class="bi bi-calendar-event text-primary"></i>
+            </div>
+            <div class="event-list">
+                <div><strong>Quarterly Meeting</strong><span>July 8, 10:00</span></div>
+                <div><strong>Security Awareness Training</strong><span>July 10, 14:00</span></div>
+                <div><strong>Office Maintenance</strong><span>July 12, 18:00</span></div>
+            </div>
+        </section>
+    </div>
+    <div class="col-xl-5">
+        <section class="portal-card h-100">
+            <div class="card-heading">
+                <h2>Quick Actions</h2>
+                <i class="bi bi-lightning-charge text-primary"></i>
+            </div>
+            <div class="quick-actions">
+                <a href="{{ url_for('portal.employees') }}"><i class="bi bi-people"></i>View Employees</a>
+                <a href="{{ url_for('portal.profile') }}"><i class="bi bi-person"></i>My Profile</a>
+                <a href="{{ url_for('portal.announcements') }}"><i class="bi bi-newspaper"></i>Company News</a>
+                <a href="{{ url_for('portal.settings') }}"><i class="bi bi-gear"></i>Settings</a>
+            </div>
+        </section>
+    </div>
+    <div class="col-xl-7">
+        <section class="portal-card h-100">
+            <div class="card-heading">
+                <h2>Latest Company News</h2>
+                <a href="{{ url_for('portal.announcements') }}">View all</a>
+            </div>
+            <div class="news-list">
+                <article>
+                    <span>Leadership</span>
+                    <strong>Quarterly Meeting agenda published</strong>
+                    <p>Review strategic priorities and team planning notes before the session.</p>
+                </article>
+                <article>
+                    <span>Facilities</span>
+                    <strong>Office maintenance scheduled</strong>
+                    <p>Workspace updates will take place outside normal business hours.</p>
+                </article>
+            </div>
+        </section>
+    </div>
+</div>
+{% endblock %}

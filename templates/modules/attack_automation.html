@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+
+{% block title %}Attack Automation - Employee Portal{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <span class="text-uppercase text-primary small fw-bold">Automated Vulnerability Testing</span>
+        <h1>Attack Automation Results</h1>
+        <p>
+            Run <code>py attacks/automation.py</code> from the project root
+            while this server is running to fire the predefined payloads
+            below and populate this table.
+        </p>
+    </div>
+</div>
+
+<section class="portal-card">
+    <table class="data-table">
+        <thead>
+            <tr><th>Time</th><th>Attack</th><th>Target</th><th>Result</th></tr>
+        </thead>
+        <tbody>
+            {% for row in results %}
+                <tr>
+                    <td>{{ row.created_at }}</td>
+                    <td>{{ row.attack_name }}</td>
+                    <td>{{ row.target }}</td>
+                    <td>{{ row.result }}</td>
+                </tr>
+            {% else %}
+                <tr><td colspan="4">No automation runs recorded yet.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</section>
+{% endblock %}
