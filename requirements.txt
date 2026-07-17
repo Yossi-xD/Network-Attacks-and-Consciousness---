@@ -3,3 +3,7 @@ opencv-contrib-python==5.0.0.93
 mediapipe==0.10.35
 streamlit
 fpdf2==2.8.7
+scikit-learn
+scikit-image
+scipy
+matplotlib

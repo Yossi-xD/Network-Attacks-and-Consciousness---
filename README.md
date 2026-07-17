@@ -29,3 +29,23 @@ because MediaPipe cannot start from this folder's Hebrew path.
 4. Each triangle is affine-warped from both source images to that target shape.
 5. The warped images are linearly cross-dissolved using alpha.
 
+## Part 2: Morphing Attack Detection
+
+Reimplements the single-image morphing attack detection (S-MAD) method of
+Venkatesh, Raghavendra, Raja & Busch, "Single Image Face Morphing Attack
+Detection Using Ensemble of Features" (IEEE FUSION 2020), trained and
+evaluated on the Part 1 bona fide/morph dataset.
+
+Run the pipeline:
+
+```powershell
+python src/train_mad.py            # trains + evaluates, writes outputs/mad/
+python src/build_mad_report_pdf.py  # renders submission_report_part2.pdf
+```
+
+Pipeline: YCbCr + HSV color-space expansion -> 3-level Laplacian pyramid ->
+LBP / HOG / BSIF descriptors per scale-space image -> a Collaborative
+Representation Classifier per descriptor stream -> sum-rule score fusion.
+Evaluated with 5-fold pair-disjoint cross-validation and the ISO/IEC 30107-3
+metrics (APCER, BPCER, D-EER). See `submission_report_part2.pdf` for the
+full method, adaptations from the paper, results, and limitations.
