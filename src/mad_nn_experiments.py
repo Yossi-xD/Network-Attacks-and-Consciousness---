@@ -81,7 +81,7 @@ def summarize(name, oof, y, prev=None):
 
     row = {"name": name, "acc": acc * 100, "prec": prec * 100, "rec": rec * 100,
            "f1": f1 * 100, "deer": deer * 100, "bpcer5": b5 * 100, "bpcer10": b10 * 100,
-           "tp": tp, "tn": tn, "fp": fp, "fn": fn}
+           "tp": tp, "tn": tn, "fp": fp, "fn": fn, "oof": oof}
 
     print(f"\n=== {name} ===")
     print(f"  Confusion (oof, n={len(y)}): TP={tp} TN={tn} FP={fp} FN={fn}")
@@ -93,21 +93,38 @@ def summarize(name, oof, y, prev=None):
     return row
 
 
-def main():
+def load_data():
     d = np.load(os.path.join(OUT_DIR, "scores.npz"))
     X3 = np.column_stack([d["lbp"], d["hog"], d["bsif"]])
     X2 = np.column_stack([d["lbp"], d["hog"]])
-    y = d["labels"]
-    groups = d["groups"]
-    print(f"Dataset: {len(y)} images ({np.sum(y==0)} bona fide, {np.sum(y==1)} morph), "
-          f"{len(set(groups))} pair-groups, {N_FOLDS}-fold GroupKFold CV")
+    return X3, X2, d["labels"], d["groups"]
 
-    rows = []
+
+def run_chain(verbose=True):
+    """Runs the full step 0/2..10 cumulative chain and returns:
+      rows          -- list of metric dicts (one per step), in order
+      step_configs  -- list of dicts describing exactly what each step trained
+                        with: {name, cls, kwargs, n_streams, reverted}, so a
+                        caller (e.g. the step-report plotter) can retrain the
+                        *same* configuration on any split it likes to draw a
+                        training-curve figure for that step.
+    """
+    log = print if verbose else (lambda *a, **k: None)
+    X3, X2, y, groups = load_data()
+    log(f"Dataset: {len(y)} images ({np.sum(y==0)} bona fide, {np.sum(y==1)} morph), "
+        f"{len(set(groups))} pair-groups, {N_FOLDS}-fold GroupKFold CV")
+
+    rows, step_configs = [], []
+
+    def record(name, cls, kwargs, n_streams, reverted=False):
+        step_configs.append({"name": name, "cls": cls, "kwargs": dict(kwargs),
+                              "n_streams": n_streams, "reverted": reverted})
 
     # Step 0: current baseline hyperparameters, evaluated under the unified CV protocol.
     cfg = dict(lr=0.5, n_iterations=1000, batch_size=8, seed=0)
     oof = cv_evaluate(lambda: LogisticNeuron(**cfg), X3, y, groups)
     rows.append(summarize("Step 0: baseline (lr=0.5, batch=8, no regularization) -- unified CV protocol", oof, y))
+    record(rows[-1]["name"], LogisticNeuron, cfg, 3)
 
     # Step 2: + L2 weight decay (small sweep, pick best by D-EER on this CV).
     best = None
@@ -116,11 +133,12 @@ def main():
         oof_wd = cv_evaluate(lambda c=cfg2: LogisticNeuron(**c), X3, y, groups)
         apcers, bpcers, _ = det_curve(oof_wd, y)
         deer_wd, _ = find_deer(apcers, bpcers)
-        print(f"  [sweep] weight_decay={wd}: D-EER={deer_wd*100:.2f}%")
+        log(f"  [sweep] weight_decay={wd}: D-EER={deer_wd*100:.2f}%")
         if best is None or deer_wd < best[0]:
             best = (deer_wd, wd, oof_wd)
     cfg["weight_decay"] = best[1]
     rows.append(summarize(f"Step 2: + L2 weight decay (lambda={best[1]})", best[2], y, prev=rows[-1]))
+    record(rows[-1]["name"], LogisticNeuron, cfg, 3)
 
     # Step 3: + LR decay and momentum on top of step 2.
     cfg["lr"] = 0.1
@@ -128,29 +146,34 @@ def main():
     cfg["momentum"] = 0.9
     oof = cv_evaluate(lambda c=dict(cfg): LogisticNeuron(**c), X3, y, groups)
     rows.append(summarize("Step 3: + lower LR (0.5->0.1) + 1/(1+0.01t) decay + momentum 0.9", oof, y, prev=rows[-1]))
+    record(rows[-1]["name"], LogisticNeuron, cfg, 3)
 
     # Step 4: + class-balanced loss weighting.
     cfg["class_weight"] = "balanced"
     oof = cv_evaluate(lambda c=dict(cfg): LogisticNeuron(**c), X3, y, groups)
     rows.append(summarize("Step 4: + class-balanced loss weighting (2:1 bona fide:morph)", oof, y, prev=rows[-1]))
+    record(rows[-1]["name"], LogisticNeuron, cfg, 3)
 
     # Step 5: + larger (near full) batch size.
     cfg["batch_size"] = 128  # clipped to each fold's train size internally (~139) -> effectively full-batch
     oof = cv_evaluate(lambda c=dict(cfg): LogisticNeuron(**c), X3, y, groups)
     rows.append(summarize("Step 5: + near full-batch (batch_size 8->128)", oof, y, prev=rows[-1]))
+    record(rows[-1]["name"], LogisticNeuron, cfg, 3)
 
     # Step 6: BSIF ablation -- try dropping the near-chance BSIF stream.
     oof_2stream = cv_evaluate(lambda c=dict(cfg): LogisticNeuron(**c), X2, y, groups)
     row_2stream = summarize("Step 6 (trial): drop BSIF, fuse LBP+HOG only", oof_2stream, y, prev=rows[-1])
     if row_2stream["deer"] <= rows[-1]["deer"]:
-        print("  -> keeping 2-stream (LBP+HOG) fusion: D-EER did not get worse without BSIF")
+        log("  -> keeping 2-stream (LBP+HOG) fusion: D-EER did not get worse without BSIF")
         X_active = X2
         rows.append(row_2stream)
+        record(rows[-1]["name"], LogisticNeuron, cfg, 2)
     else:
-        print("  -> reverting: keeping BSIF in the fusion, D-EER got worse without it")
+        log("  -> reverting: keeping BSIF in the fusion, D-EER got worse without it")
         X_active = X3
         rows.append(summarize("Step 6: keep 3 streams (BSIF ablation reverted)", cv_evaluate(
             lambda c=dict(cfg): LogisticNeuron(**c), X3, y, groups), y, prev=rows[-2]))
+        record(rows[-1]["name"], LogisticNeuron, cfg, 3)
 
     # Step 7: nonlinear fusion head (TinyMLP) with the same tricks accumulated so far.
     mlp_cfg = dict(cfg)
@@ -160,45 +183,58 @@ def main():
     oof_mlp = cv_evaluate(lambda c=dict(mlp_cfg): TinyMLP(**c), X_active, y, groups)
     row_mlp = summarize("Step 7 (trial): nonlinear fusion head (3->8->1 MLP, same tricks)", oof_mlp, y, prev=rows[-1])
     if row_mlp["deer"] <= rows[-1]["deer"]:
-        print("  -> keeping TinyMLP: D-EER improved or held over the linear neuron")
+        log("  -> keeping TinyMLP: D-EER improved or held over the linear neuron")
         use_mlp = True
         rows.append(row_mlp)
+        record(rows[-1]["name"], TinyMLP, mlp_cfg, X_active.shape[1])
     else:
-        print("  -> reverting to the linear neuron: TinyMLP overfit the small dataset")
+        log("  -> reverting to the linear neuron: TinyMLP overfit the small dataset")
         use_mlp = False
         rows.append(dict(rows[-1], name="Step 7: keep linear neuron (MLP trial reverted)"))
+        record("Step 7 (trial, reverted): nonlinear fusion head (3->8->1 MLP)", TinyMLP, mlp_cfg,
+               X_active.shape[1], reverted=True)
 
     model_factory_base = (lambda c: (lambda: TinyMLP(**c))) if use_mlp else (lambda c: (lambda: LogisticNeuron(**c)))
     active_cfg = mlp_cfg if use_mlp else cfg
+    active_cls = TinyMLP if use_mlp else LogisticNeuron
 
     # Step 8: early stopping via an internal, group-disjoint validation slice per fold.
     es_cfg = dict(active_cfg)
     es_cfg["n_iterations"] = 1000
     oof_es, stop_iters = cv_evaluate_early_stop(
         model_factory_base(es_cfg), X_active, y, groups, seed=0)
-    print(f"  [early stopping] chosen iteration per fold: {stop_iters}")
+    log(f"  [early stopping] chosen iteration per fold: {stop_iters}")
     active_cfg["n_iterations"] = int(round(np.mean(stop_iters)))
     rows.append(summarize(f"Step 8: + early stopping (avg stop iter={active_cfg['n_iterations']} of 1000)",
                            oof_es, y, prev=rows[-1]))
+    record(rows[-1]["name"], active_cls, active_cfg, X_active.shape[1])
 
     # Step 9: + gradient clipping.
     active_cfg["grad_clip"] = 1.0
     oof = cv_evaluate(model_factory_base(active_cfg), X_active, y, groups)
     rows.append(summarize("Step 9: + gradient clipping (max grad norm 1.0)", oof, y, prev=rows[-1]))
+    record(rows[-1]["name"], active_cls, active_cfg, X_active.shape[1])
 
     # Step 10: + label smoothing.
     active_cfg["label_smoothing"] = 0.05
     oof = cv_evaluate(model_factory_base(active_cfg), X_active, y, groups)
     rows.append(summarize("Step 10: + label smoothing (0/1 -> 0.05/0.95)", oof, y, prev=rows[-1]))
+    record(rows[-1]["name"], active_cls, active_cfg, X_active.shape[1])
 
-    print("\n\n================ FULL CHAIN SUMMARY (vs. Step 0 baseline) ================")
-    base = rows[0]
-    for r in rows:
-        print(f"{r['name']:<70s} D-EER={r['deer']:6.2f}%  BPCER@5={r['bpcer5']:6.2f}%  "
-              f"F1={r['f1']:6.2f}%  Acc={r['acc']:6.2f}%   (D-EER delta from step0: {r['deer']-base['deer']:+.2f}pt)")
+    if verbose:
+        print("\n\n================ FULL CHAIN SUMMARY (vs. Step 0 baseline) ================")
+        base = rows[0]
+        for r in rows:
+            print(f"{r['name']:<70s} D-EER={r['deer']:6.2f}%  BPCER@5={r['bpcer5']:6.2f}%  "
+                  f"F1={r['f1']:6.2f}%  Acc={r['acc']:6.2f}%   (D-EER delta from step0: {r['deer']-base['deer']:+.2f}pt)")
+        print(f"\nFinal active config: {'TinyMLP' if use_mlp else 'LogisticNeuron'} {active_cfg}")
+        print(f"Final X streams used: {'LBP+HOG' if X_active.shape[1]==2 else 'LBP+HOG+BSIF'}")
 
-    print(f"\nFinal active config: {'TinyMLP' if use_mlp else 'LogisticNeuron'} {active_cfg}")
-    print(f"Final X streams used: {'LBP+HOG' if X_active.shape[1]==2 else 'LBP+HOG+BSIF'}")
+    return rows, step_configs
+
+
+def main():
+    run_chain(verbose=True)
 
 
 if __name__ == "__main__":

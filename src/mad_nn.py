@@ -187,7 +187,8 @@ class TinyMLP:
         self.b2 = 0.0
         vel = {k: np.zeros_like(getattr(self, k)) for k in ("W1", "b1", "W2", "b2")}
 
-        self.history_ = {"train_acc": [], "test_acc": [], "train_loss": [], "test_loss": []}
+        self.history_ = {"train_acc": [], "test_acc": [], "train_loss": [], "test_loss": [],
+                          "w1_norm": [], "w2_norm": [], "b2": []}
         batch_size = min(self.batch_size, n)
 
         def forward(Xb):
@@ -229,6 +230,9 @@ class TinyMLP:
             p_train, _, _ = forward(Xn)
             self.history_["train_loss"].append(_binary_cross_entropy(y, p_train))
             self.history_["train_acc"].append(float(np.mean((p_train >= 0.5) == y)))
+            self.history_["w1_norm"].append(float(np.linalg.norm(self.W1)))
+            self.history_["w2_norm"].append(float(np.linalg.norm(self.W2)))
+            self.history_["b2"].append(float(self.b2))
             if X_val is not None:
                 Xn_val = (np.asarray(X_val, dtype=np.float64) - self.mean_) / self.std_
                 p_val, _, _ = forward(Xn_val)
