@@ -192,18 +192,20 @@ h2(pdf, "7. Neural Network Fusion Layer")
 body(pdf, "The paper combines the three descriptor-stream scores with a fixed, hand-picked sum rule. We additionally "
           "replace that fixed rule with the simplest possible neural network -- a single trainable neuron (logistic "
           "regression) -- that learns how much to weight each stream instead: "
-          "z = w_lbp*lbp + w_hog*hog + w_bsif*bsif + b, p = sigmoid(z), trained by full-batch gradient descent on the "
-          "binary cross-entropy loss. Its 3 inputs are the same z-scored, out-of-fold CRC scores from Section 5/6 -- "
-          "already leakage-free -- so this experiment only needed one further pair-disjoint 80/20 train/test split "
+          "z = w_lbp*lbp + w_hog*hog + w_bsif*bsif + b, p = sigmoid(z), trained by mini-batch stochastic gradient "
+          f"descent (batch size {NN['batch_size']}, {NN['n_iterations']} iterations) on the binary cross-entropy "
+          "loss. Its 3 inputs are the same z-scored, out-of-fold CRC scores from Section 5/6 -- already leakage-free "
+          "-- so this experiment only needed one further pair-disjoint 80/20 train/test split "
           f"({NN['n_train']} training images / {NN['n_test']} test images) to fit and evaluate the neuron itself.")
 code_block(pdf, [
     "class LogisticNeuron:",
-    "    def fit(self, X, y):          # X = [lbp_score, hog_score, bsif_score] per image",
-    "        for _ in range(epochs):",
-    "            p = sigmoid(Xn @ self.weights + self.bias)",
-    "            loss = -mean(y*log(p) + (1-y)*log(1-p))      # binary cross-entropy",
-    "            self.weights -= lr * Xn.T @ (p - y) / n       # gradient descent",
-    "            self.bias    -= lr * mean(p - y)",
+    "    def fit(self, X, y, X_val, y_val):   # X = [lbp_score, hog_score, bsif_score] per image",
+    "        for _ in range(n_iterations):",
+    "            xb, yb = mini_batch(X, y)          # random mini-batch each step",
+    "            p_batch = sigmoid(xb @ self.weights + self.bias)",
+    "            self.weights -= lr * xb.T @ (p_batch - yb) / batch_size   # gradient descent",
+    "            self.bias    -= lr * mean(p_batch - yb)",
+    "            # log train/test accuracy+loss and the weights/bias at this step",
 ], title="src/mad_nn.py -- the fusion neuron:")
 
 table(pdf, [
@@ -211,20 +213,23 @@ table(pdf, [
     ["Training accuracy", f"{NN['train_accuracy_percent']:.2f}%"],
     ["Test accuracy", f"{NN['test_accuracy_percent']:.2f}%"],
     ["Final training cross-entropy loss", f"{NN['final_train_cross_entropy_loss']:.4f}"],
+    ["Final test cross-entropy loss", f"{NN['final_test_cross_entropy_loss']:.4f}"],
     ["Weight - LBP stream", f"{NN['weights']['lbp']:.3f}"],
     ["Weight - HOG stream", f"{NN['weights']['hog']:.3f}"],
     ["Weight - BSIF stream", f"{NN['weights']['bsif']:.3f}"],
     ["Bias", f"{NN['bias']:.3f}"],
 ], col_widths=[110, 60])
 
-pdf.image(os.path.join(OUT, "nn_loss_curve.png"), x=(210 - 100) / 2, w=100)
-caption(pdf, "Figure 2: Binary cross-entropy training loss of the fusion neuron over "
-             f"{NN['epochs']} gradient-descent epochs (learning rate {NN['learning_rate']}).")
+pdf.image(os.path.join(OUT, "nn_dashboard.png"), x=(210 - 170) / 2, w=170)
+caption(pdf, "Figure 2: Training diagnostics of the fusion neuron over "
+             f"{NN['n_iterations']} mini-batch SGD iterations (learning rate {NN['learning_rate']}) -- accuracy, "
+             "cross-entropy loss, and the weight/bias trajectories for train (thin blue) vs. held-out test (thick "
+             "red) data.")
 
 body(pdf, "The learned weights corroborate Section 6's finding purely from the training data, with no hand-tuning: "
-          "LBP and HOG get large positive weights (the neuron relies on them heavily), while BSIF's weight is small "
-          "and negative -- the network learned on its own that the BSIF stream carries little useful signal, "
-          "consistent with its near-chance 43.1% standalone D-EER.")
+          "LBP and HOG get large positive weights that keep growing (the neuron relies on them heavily), while "
+          "BSIF's weight drifts negative -- the network learned on its own that the BSIF stream carries little "
+          "useful signal, consistent with its near-chance 43.1% standalone D-EER.")
 
 h2(pdf, "8. Conclusion")
 body(pdf, "We reimplemented the ensemble-of-features S-MAD pipeline from Venkatesh et al. (FUSION 2020) end-to-end "

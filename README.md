@@ -53,7 +53,9 @@ metrics (APCER, BPCER, D-EER).
 On top of that, `src/mad_nn.py` + `src/train_mad_nn.py` replace the fixed
 sum-rule fusion with a trained single-neuron logistic regression (the
 simplest possible neural network) over the same 3 out-of-fold stream
-scores: full-batch gradient descent on binary cross-entropy, reporting
-training/test accuracy, the loss curve, and the learned weights and bias
-per stream. See `submission_report_part2.pdf` for the full method,
-adaptations from the paper, results, and limitations.
+scores: mini-batch stochastic gradient descent on binary cross-entropy,
+reporting training/test accuracy, a training-diagnostics dashboard (train
+vs. test accuracy and loss curves, plus the weight/bias trajectories), and
+the final learned weights and bias per stream. See
+`submission_report_part2.pdf` for the full method, adaptations from the
+paper, results, and limitations.
