@@ -1,11 +1,11 @@
-"""Render a two-page morphing submission report, with the key figures embedded."""
+"""Render a two-page morphing submission report, with key figures and code snippets embedded."""
 import os
 from fpdf import FPDF
 
 BASE = os.getcwd()
 OUT = os.path.join(BASE, "outputs")
 
-TITLE_SIZE, H_SIZE, BODY_SIZE, SMALL_SIZE = 15, 11.5, 9.2, 8.2
+TITLE_SIZE, H_SIZE, BODY_SIZE, SMALL_SIZE = 14, 10.5, 8.8, 8.0
 MARGIN = 15
 
 
@@ -23,37 +23,51 @@ class Report(FPDF):
 def h1(pdf, text):
     pdf.set_font("Helvetica", "B", TITLE_SIZE)
     pdf.set_text_color(20, 20, 20)
-    pdf.multi_cell(0, 7, text)
-    pdf.ln(1)
+    pdf.multi_cell(0, 6.5, text)
+    pdf.ln(1.5)
 
 
 def h2(pdf, text):
     pdf.set_font("Helvetica", "B", H_SIZE)
     pdf.set_text_color(30, 30, 30)
-    pdf.multi_cell(0, 6, text)
-    pdf.ln(0.5)
+    pdf.multi_cell(0, 5.5, text)
+    pdf.ln(0.8)
 
 
 def body(pdf, text):
     pdf.set_font("Helvetica", size=BODY_SIZE)
     pdf.set_text_color(0, 0, 0)
-    pdf.multi_cell(0, 4.6, text)
-    pdf.ln(1)
+    pdf.multi_cell(0, 4.2, text)
+    pdf.ln(1.2)
 
 
 def bullets(pdf, items):
     pdf.set_font("Helvetica", size=BODY_SIZE)
     for it in items:
         pdf.set_x(MARGIN)
-        pdf.multi_cell(0, 4.6, f"-  {it}")
-    pdf.ln(1)
+        pdf.multi_cell(0, 4.2, f"-  {it}")
+    pdf.ln(1.2)
+
+
+def code_block(pdf, lines, title=None):
+    if title:
+        pdf.set_font("Helvetica", "BI", 7.8)
+        pdf.set_text_color(70, 70, 70)
+        pdf.cell(180, 4.0, title, new_x="LMARGIN", new_y="NEXT")
+    pdf.set_font("Courier", size=7.5)
+    pdf.set_fill_color(244, 246, 249)
+    pdf.set_text_color(25, 25, 25)
+    for line in lines:
+        pdf.set_x(MARGIN + 2)
+        pdf.cell(180 - 4, 3.7, f"  {line}", border=0, fill=True, new_x="LMARGIN", new_y="NEXT")
+    pdf.ln(1.8)
 
 
 def caption(pdf, text):
     pdf.set_font("Helvetica", "I", SMALL_SIZE)
-    pdf.set_text_color(90, 90, 90)
-    pdf.multi_cell(0, 4, text, align="C")
-    pdf.ln(2)
+    pdf.set_text_color(80, 80, 80)
+    pdf.multi_cell(0, 3.8, text, align="C")
+    pdf.ln(1.5)
 
 
 pdf = Report(format="A4")
@@ -61,93 +75,71 @@ pdf.set_auto_page_break(auto=True, margin=14)
 pdf.set_margins(MARGIN, 14, MARGIN)
 pdf.set_title("Face Morphing - Final Project Report")
 
-# ---------------- Page 1: Part 1, sections 1-4 ----------------
+# ---------------- Page 1: Sections 1 to 4 with Code Snippets + First Showcase Pair ----------------
 pdf.add_page()
 h1(pdf, "Face Morphing - Final Project Report")
 
-h2(pdf, "1. Method")
-body(pdf, "We implement classical landmark-based face morphing: given two face "
-          "images of different identities, we (a) detect dense facial landmarks "
-          "on each face, (b) establish point correspondence via matching "
-          "landmark indices, (c) triangulate the averaged landmark shape with "
-          "Delaunay triangulation, (d) warp each source image's triangles into "
-          "the corresponding triangles of the target (morph) shape with a "
-          "piecewise-affine transform, and (e) cross-dissolve (linearly blend) "
-          "the two warped images. This is the same family of technique used to "
-          "generate face-morphing-attack images in the biometrics literature "
-          "(e.g. Ferrara, Franco & Maltoni, \"The Magic Passport,\" IJCB 2014).")
+h2(pdf, "1. Method Used")
+body(pdf, "We implement a classical landmark-based face morphing pipeline (Beier-Neely / Delaunay approach, widely studied in face-morphing-attack literature such as Ferrara et al., IJCB 2014). Given two bona fide face photos of different identities (Subject A and Subject B) from Labeled Faces in the Wild (LFW), the pipeline detects dense facial landmarks, aligns corresponding points, computes a Delaunay triangulation on the averaged target shape, performs piecewise-affine warping on every triangle patch, and cross-dissolves the pixel intensities.")
+code_block(pdf, [
+    "def morph_images(img1, pts1, img2, pts2, alpha, triangles=None):",
+    "    pts_morph = (1 - alpha) * pts1 + alpha * pts2  # Averaged target shape",
+    "    triangles = delaunay_triangulation(pts_morph, (w, h))",
+    "    # Warp each triangle from img1 & img2 into the target shape, then blend:",
+    "    morphed = (1 - alpha) * warped1 + alpha * warped2",
+], title="src/morph.py - Core pipeline overview:")
 
-h2(pdf, "2. Data")
-body(pdf, "Five or more pairs of different-identity face images are drawn from "
-          "Labeled Faces in the Wild (LFW) via scikit-learn's fetch_lfw_pairs "
-          "\"different person\" split -- a standard, public, pre-aligned face "
-          "dataset, which avoids privacy/consent concerns around using photos "
-          "of people we know while still giving realistic, varied bona fide "
-          "face images.")
+h2(pdf, "2. Landmark Alignment Strategy")
+body(pdf, "We obtain 478 3D facial landmarks using MediaPipe FaceLandmarker (with 3x bicubic upscaling of the 125x94 LFW crops for robust tracking). Because MediaPipe tracks only the face mesh, we append 8 fixed boundary points (the 4 corners + 4 edge midpoints of the frame) to both landmark arrays. This ensures that background and frame borders participate in the continuous Delaunay triangulation and warping instead of shearing. Correspondence is purely index-based (point i on Face A corresponds to point i on Face B), and one single Delaunay topology computed on the convex combination shape is valid simultaneously for both faces.")
+code_block(pdf, [
+    "def get_landmarks(img_bgr, upscale=3):",
+    "    # ... MediaPipe detection of 478 face landmarks ...",
+    "    pts = np.array([[lm.x * w, lm.y * h] for lm in result.face_landmarks[0]])",
+    "    # Append 8 boundary points so the full frame participates in the warp:",
+    "    pts = np.vstack([pts, _boundary_points(w, h)])",
+    "    return pts, img_bgr",
+], title="src/landmarks.py - Boundary extension & correspondence:")
 
-h2(pdf, "3. Landmark detection & alignment strategy")
-body(pdf, "Landmarks are obtained with MediaPipe's FaceLandmarker (a 478-point "
-          "3-D face mesh; LFW crops are 125x94 px and are bicubically upscaled "
-          "3x first for reliable detection). Because MediaPipe only tracks the "
-          "face region, 8 fixed boundary points (image corners + edge "
-          "midpoints) are appended to both landmark sets so the background "
-          "also participates in the warp instead of only the face.\n"
-          "Correspondence between the two faces is purely index-based: "
-          "landmark i on face A corresponds to landmark i on face B, since "
-          "both come from the same 478-point model with a fixed topology -- "
-          "no separate registration/ICP step is needed. The morph target "
-          "shape at blend factor alpha is the per-point convex combination "
-          "(1-alpha)*ptsA + alpha*ptsB, and the Delaunay triangulation used "
-          "for warping is computed on this averaged shape (not on either "
-          "source shape individually), so one triangle topology is "
-          "simultaneously valid for warping both source images.")
+h2(pdf, "3. Interpolation Technique")
+body(pdf, "We combine geometric and photometric interpolation. For each Delaunay triangle, we compute the affine transform matrix mapping source vertices to target vertices (cv2.getAffineTransform) and warp the source patch (cv2.warpAffine). A filled polygon mask composites the warped patch cleanly into the target canvas. The two warped images (warped1 and warped2) are then linearly cross-dissolved with weights (1-alpha, alpha).")
+code_block(pdf, [
+    "def _warp_triangle(src_img, dst_img, tri_src, tri_dst):",
+    "    mat = cv2.getAffineTransform(np.float32(tri_src_rect), np.float32(tri_dst_rect))",
+    "    warped = cv2.warpAffine(src_patch, mat, (r_dst[2], r_dst[3]), flags=cv2.INTER_LINEAR)",
+    "    cv2.fillConvexPoly(mask, np.int32(tri_dst_rect), (1.0, 1.0, 1.0), cv2.LINE_AA)",
+    "    dst_slice[:] = dst_slice * (1 - mask_c) + warped_c * mask_c",
+], title="src/morph.py - Piecewise-affine triangle warp & compositing:")
 
-h2(pdf, "4. Interpolation technique")
-body(pdf, "For a chosen alpha in [0,1], each of the ~950 Delaunay triangles is "
-          "affine-warped from face A, and separately from face B, into its "
-          "position in the alpha-blended target shape (cv2.getAffineTransform "
-          "+ warpAffine); the two warped triangle patches are then "
-          "cross-dissolved with weights (1-alpha, alpha) and composited using "
-          "a filled-polygon mask. This reproduces both the geometric "
-          "interpolation (the shape warps smoothly with alpha) and the "
-          "photometric interpolation (pixel intensities blend smoothly with "
-          "alpha) that a real morphing attack relies on. We render the "
-          "standard attack morph at alpha=0.5 for every pair, plus an "
-          "alpha = 0, 0.25, 0.5, 0.75, 1 strip for a subset, to visualize the "
-          "interpolation continuum (Figure 1).")
-
-pdf.image(os.path.join(OUT, "strips", "pair007_strip.png"), w=180)
-caption(pdf, "Figure 1: interpolation strip at alpha = 0, 0.25, 0.5, 0.75, 1.")
-
-# ---------------- Page 2: Part 1 section 5 + figure ----------------
-pdf.add_page()
-h2(pdf, "5. Observations & limitations")
+h2(pdf, "4. Observations and Limitations")
 bullets(pdf, [
-    "At alpha=0.5 the morphs are visually convincing single identities that "
-    "plausibly resemble both source subjects -- exactly the property that "
-    "makes morphing attacks a biometric security threat.",
-    "Quality depends heavily on how well the two source photos agree in "
-    "pose and expression: pairs with mismatched mouth state (one subject "
-    "smiling with teeth, the other neutral) show visible ghosting around "
-    "the mouth.",
-    "A feature present in only one subject (e.g. eyeglasses) fades in/out "
-    "across alpha rather than looking physically consistent -- a classic, "
-    "visible morphing artifact.",
-    "Small seams appear near the image border, since background pixels far "
-    "from any landmark are only weakly constrained by the triangulation.",
-    "We use simple cross-dissolve rather than Poisson/gradient-domain "
-    "blending, so skin-tone/lighting differences between the two subjects "
-    "are not colour-corrected -- a known limitation relative to "
-    "production-grade morphing tools.",
-    "Source image resolution (125x94 before upscaling) caps the fine "
-    "detail achievable in the final morph.",
+    "At alpha=0.5, morphs successfully blend both identities into a convincing, single face (demonstrating vulnerability to morphing attacks).",
+    "Mismatched pose/expression across pairs (e.g., open mouth with teeth vs. closed lips) creates visible ghosting or double lips.",
+    "Accessories unique to one subject (such as eyeglasses or hair bangs) fade semi-transparently rather than retaining solid physical structure.",
+    "We use linear cross-dissolve rather than Poisson/gradient-domain cloning, meaning lighting and skin-tone differences are not color-corrected across the subjects.",
 ])
 
-pdf.image(os.path.join(OUT, "showcase", "pair007_triptych.png"), w=180)
-caption(pdf, "Figure 2: subject A, morph (alpha=0.5), subject B -- one of the "
-             "five showcased pairs (see outputs/showcase/ for all five, and "
-             "outputs/pairs/ + outputs/morphs/ for every generated pair).")
+# First showcase pair at the bottom of Page 1 (w=112 mm, centered)
+h2(pdf, "5. Showcase: 5 Pairs of Original Faces and Morphs (alpha=0.5)")
+pdf.image(os.path.join(OUT, "showcase", "pair000_triptych.png"), x=(210-112)/2, w=112)
+
+# ---------------- Page 2: Remaining 4 Showcase Pairs + Figure Caption ----------------
+pdf.add_page()
+
+pdf.image(os.path.join(OUT, "showcase", "pair003_triptych.png"), x=(210-126)/2, w=126)
+pdf.ln(1.8)
+pdf.image(os.path.join(OUT, "showcase", "pair004_triptych.png"), x=(210-126)/2, w=126)
+pdf.ln(1.8)
+pdf.image(os.path.join(OUT, "showcase", "pair007_triptych.png"), x=(210-126)/2, w=126)
+pdf.ln(1.8)
+pdf.image(os.path.join(OUT, "showcase", "pair009_triptych.png"), x=(210-126)/2, w=126)
+pdf.ln(2.5)
+
+caption(pdf, "Figure 1: Five complete triptychs of original bona fide face pairs from LFW ('pair000' on Page 1; 'pair003', 'pair004', 'pair007', and 'pair009' above) and their resulting attack morphs at alpha=0.5. Each morph seamlessly fuses the facial geometry and appearance of Subject A and Subject B using our Delaunay triangulation and piecewise-affine pipeline.")
 
 out_path = os.path.join(BASE, "submission_report.pdf")
 pdf.output(out_path)
-print("wrote", out_path)
+print(f"wrote {out_path} (Total pages: {pdf.page_no()})")
+
+
+
+
