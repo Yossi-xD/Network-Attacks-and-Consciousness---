@@ -9,7 +9,8 @@ sys.stdout.reconfigure(encoding="utf-8")
 sys.path.insert(0, os.path.dirname(__file__))
 from img_io import imread, imwrite
 
-BASE = r"C:\Users\Yossi\fp_morph_link"
+# Keep generated assets inside the project, regardless of where the script is run.
+BASE = os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir))
 PAIRS_DIR = os.path.join(BASE, "outputs", "pairs")
 MORPHS_DIR = os.path.join(BASE, "outputs", "morphs")
 SHOWCASE_DIR = os.path.join(BASE, "outputs", "showcase")

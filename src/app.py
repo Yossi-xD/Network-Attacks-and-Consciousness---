@@ -6,7 +6,7 @@ landmark/triangulation/warp pipeline as generate_morphs.py (src/landmarks.py
 separate reimplementation.
 
 Must be launched with the process working directory set to the ASCII
-junction (C:\\Users\\Yossi\\fp_morph_link) -- see README's Unicode/Windows
+junction (C:\\Users\\Yossi\\face_morph_project_run) -- see README's Unicode/Windows
 note; run_app.ps1 in the project root handles this.
 """
 import os

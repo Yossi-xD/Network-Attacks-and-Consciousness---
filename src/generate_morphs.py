@@ -19,7 +19,9 @@ from img_io import imread, imwrite
 from landmarks import get_landmarks
 from morph import morph_images
 
-BASE = r"C:\Users\Yossi\fp_morph_link"
+# Resolve from this file rather than an old, machine-specific junction name.
+# This works both from the repository and from run_app.ps1's ASCII junction.
+BASE = os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir))
 PAIRS_DIR = os.path.join(BASE, "data", "lfw_diff_pairs")
 OUT_PAIRS = os.path.join(BASE, "outputs", "pairs")
 OUT_MORPHS = os.path.join(BASE, "outputs", "morphs")
