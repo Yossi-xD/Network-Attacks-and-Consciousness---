@@ -1,9 +1,7 @@
 """Interactive face-morphing demo app (Streamlit).
 
 Upload two face photos, pick alpha, and morph them using the exact same
-landmark/triangulation/warp pipeline as generate_morphs.py (src/landmarks.py
-+ src/morph.py) -- this is a live front-end for the graded pipeline, not a
-separate reimplementation.
+landmark/triangulation/warp pipeline in src/landmarks.py + src/morph.py.
 
 Must be launched with the process working directory set to the ASCII
 junction (C:\\Users\\Yossi\\face_morph_project_run) -- see README's Unicode/Windows

@@ -77,18 +77,14 @@ body(pdf, "We implement classical landmark-based face morphing: given two face "
           "generate face-morphing-attack images in the biometrics literature "
           "(e.g. Ferrara, Franco & Maltoni, \"The Magic Passport,\" IJCB 2014).")
 
-h2(pdf, "2. Data")
-body(pdf, "Five or more pairs of different-identity face images are drawn from "
-          "Labeled Faces in the Wild (LFW) via scikit-learn's fetch_lfw_pairs "
-          "\"different person\" split -- a standard, public, pre-aligned face "
-          "dataset, which avoids privacy/consent concerns around using photos "
-          "of people we know while still giving realistic, varied bona fide "
-          "face images.")
+h2(pdf, "2. Inputs")
+body(pdf, "The interactive dashboard accepts two user-provided face images. "
+          "For reliable landmark detection and a clean morph, use clear, "
+          "front-facing portraits with one visible face per image.")
 
 h2(pdf, "3. Landmark detection & alignment strategy")
 body(pdf, "Landmarks are obtained with MediaPipe's FaceLandmarker (a 478-point "
-          "3-D face mesh; LFW crops are 125x94 px and are bicubically upscaled "
-          "3x first for reliable detection). Because MediaPipe only tracks the "
+          "3-D face mesh). Because MediaPipe only tracks the "
           "face region, 8 fixed boundary points (image corners + edge "
           "midpoints) are appended to both landmark sets so the background "
           "also participates in the warp instead of only the face.\n"
