@@ -40,6 +40,7 @@ Run the pipeline:
 
 ```powershell
 python src/train_mad.py            # trains + evaluates, writes outputs/mad/
+python src/train_mad_nn.py          # trains the neural fusion layer on top
 python src/build_mad_report_pdf.py  # renders submission_report_part2.pdf
 ```
 
@@ -47,5 +48,12 @@ Pipeline: YCbCr + HSV color-space expansion -> 3-level Laplacian pyramid ->
 LBP / HOG / BSIF descriptors per scale-space image -> a Collaborative
 Representation Classifier per descriptor stream -> sum-rule score fusion.
 Evaluated with 5-fold pair-disjoint cross-validation and the ISO/IEC 30107-3
-metrics (APCER, BPCER, D-EER). See `submission_report_part2.pdf` for the
-full method, adaptations from the paper, results, and limitations.
+metrics (APCER, BPCER, D-EER).
+
+On top of that, `src/mad_nn.py` + `src/train_mad_nn.py` replace the fixed
+sum-rule fusion with a trained single-neuron logistic regression (the
+simplest possible neural network) over the same 3 out-of-fold stream
+scores: full-batch gradient descent on binary cross-entropy, reporting
+training/test accuracy, the loss curve, and the learned weights and bias
+per stream. See `submission_report_part2.pdf` for the full method,
+adaptations from the paper, results, and limitations.

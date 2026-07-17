@@ -13,6 +13,8 @@ MARGIN = 15
 
 with open(os.path.join(OUT, "metrics.json"), encoding="utf-8") as f:
     M = json.load(f)
+with open(os.path.join(OUT, "nn_metrics.json"), encoding="utf-8") as f:
+    NN = json.load(f)
 
 
 class Report(FPDF):
@@ -183,13 +185,57 @@ bullets(pdf, [
     "the generalization gap this literature repeatedly flags as an open problem.",
 ])
 
-h2(pdf, "7. Conclusion")
+# ---------------- Page 3 ----------------
+pdf.add_page()
+
+h2(pdf, "7. Neural Network Fusion Layer")
+body(pdf, "The paper combines the three descriptor-stream scores with a fixed, hand-picked sum rule. We additionally "
+          "replace that fixed rule with the simplest possible neural network -- a single trainable neuron (logistic "
+          "regression) -- that learns how much to weight each stream instead: "
+          "z = w_lbp*lbp + w_hog*hog + w_bsif*bsif + b, p = sigmoid(z), trained by full-batch gradient descent on the "
+          "binary cross-entropy loss. Its 3 inputs are the same z-scored, out-of-fold CRC scores from Section 5/6 -- "
+          "already leakage-free -- so this experiment only needed one further pair-disjoint 80/20 train/test split "
+          f"({NN['n_train']} training images / {NN['n_test']} test images) to fit and evaluate the neuron itself.")
+code_block(pdf, [
+    "class LogisticNeuron:",
+    "    def fit(self, X, y):          # X = [lbp_score, hog_score, bsif_score] per image",
+    "        for _ in range(epochs):",
+    "            p = sigmoid(Xn @ self.weights + self.bias)",
+    "            loss = -mean(y*log(p) + (1-y)*log(1-p))      # binary cross-entropy",
+    "            self.weights -= lr * Xn.T @ (p - y) / n       # gradient descent",
+    "            self.bias    -= lr * mean(p - y)",
+], title="src/mad_nn.py -- the fusion neuron:")
+
+table(pdf, [
+    ["Metric", "Value"],
+    ["Training accuracy", f"{NN['train_accuracy_percent']:.2f}%"],
+    ["Test accuracy", f"{NN['test_accuracy_percent']:.2f}%"],
+    ["Final training cross-entropy loss", f"{NN['final_train_cross_entropy_loss']:.4f}"],
+    ["Weight - LBP stream", f"{NN['weights']['lbp']:.3f}"],
+    ["Weight - HOG stream", f"{NN['weights']['hog']:.3f}"],
+    ["Weight - BSIF stream", f"{NN['weights']['bsif']:.3f}"],
+    ["Bias", f"{NN['bias']:.3f}"],
+], col_widths=[110, 60])
+
+pdf.image(os.path.join(OUT, "nn_loss_curve.png"), x=(210 - 100) / 2, w=100)
+caption(pdf, "Figure 2: Binary cross-entropy training loss of the fusion neuron over "
+             f"{NN['epochs']} gradient-descent epochs (learning rate {NN['learning_rate']}).")
+
+body(pdf, "The learned weights corroborate Section 6's finding purely from the training data, with no hand-tuning: "
+          "LBP and HOG get large positive weights (the neuron relies on them heavily), while BSIF's weight is small "
+          "and negative -- the network learned on its own that the BSIF stream carries little useful signal, "
+          "consistent with its near-chance 43.1% standalone D-EER.")
+
+h2(pdf, "8. Conclusion")
 body(pdf, "We reimplemented the ensemble-of-features S-MAD pipeline from Venkatesh et al. (FUSION 2020) end-to-end "
           "on our own bona fide/morph dataset from Part 1: color-space expansion, Laplacian-pyramid scale space, "
           "LBP/HOG/BSIF descriptors, per-stream P-CRC classification, and sum-rule fusion, evaluated with the "
           "ISO/IEC 30107-3 metrics the field standardizes on. The pipeline detects our own morphs meaningfully "
           "better than chance (D-EER 17.2%), with the expected accuracy gap to the original paper explained by "
-          "dataset scale and our BSIF filter-bank substitution, both documented above.")
+          "dataset scale and our BSIF filter-bank substitution, both documented above. We further trained a small "
+          f"neural network (a single logistic-regression neuron) to learn the stream-fusion weights directly from "
+          f"data instead of a fixed sum rule, reaching {NN['test_accuracy_percent']:.1f}% test accuracy and "
+          "independently confirming, through its learned weights, which descriptor streams actually carry signal.")
 
 out_path = os.path.join(BASE, "submission_report_part2.pdf")
 pdf.output(out_path)

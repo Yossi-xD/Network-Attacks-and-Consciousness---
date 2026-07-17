@@ -159,7 +159,8 @@ def main():
         json.dump(metrics, f, indent=2)
 
     np.savez(os.path.join(OUT_DIR, "scores.npz"), scores=oof_scores, labels=labels,
-             groups=groups, paths=np.array(paths))
+             groups=groups, paths=np.array(paths),
+             lbp=oof_stream_scores["lbp"], hog=oof_stream_scores["hog"], bsif=oof_stream_scores["bsif"])
 
     # ---- DET curve plot ----
     fig, ax = plt.subplots(figsize=(5, 5))
