@@ -4,7 +4,7 @@ Upload two face photos, pick alpha, and morph them using the exact same
 landmark/triangulation/warp pipeline in src/landmarks.py + src/morph.py.
 
 Must be launched with the process working directory set to the ASCII
-junction (C:\\Users\\Yossi\\face_morph_project_run) -- see README's Unicode/Windows
+junction (%USERPROFILE%\\face_morph_project_run) -- see README's Unicode/Windows
 note; run_app.ps1 in the project root handles this.
 """
 import os

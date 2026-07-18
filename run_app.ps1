@@ -2,7 +2,7 @@
 # Must run from the ASCII junction -- MediaPipe's native core can't start up
 # when the process working directory contains non-ASCII characters (this
 # folder's path has Hebrew characters); see README's Unicode/Windows note.
-$junction = "C:\Users\Yossi\face_morph_project_run"
+$junction = Join-Path $env:USERPROFILE "face_morph_project_run"
 if (-not (Test-Path $junction)) {
     New-Item -ItemType Junction -Path $junction -Target $PSScriptRoot | Out-Null
 }
