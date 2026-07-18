@@ -18,7 +18,7 @@ identities blended into one) using **EfficientNet-B6** deep features and an
 
 ## Pipeline (as in the paper, Sec. 3)
 
-```
+```text
 face → resize 528 + CLAHE → EfficientNet-B6 (pretrained, GAP) → 2304-d vector → SVM (RBF) → Real / Morph
 ```
 
@@ -67,9 +67,6 @@ threshold optimization (paper Sec. 4.4), and a real-time single-image
 prediction demo (paper Sec. 4.5).
 
 ## Files
+
 - `DMorphNet.ipynb` — the notebook (single, clean, end-to-end)
 - `DMorphNet_Gawade2026_COMPUTATIA_article.pdf` — the implemented article
-- `DMorphNet_Results_Analysis_and_Improvements.pdf` — results analysis report
-- `DMorphNet_presentation.html` — presentation
-- `scripts/build_clean_notebook.py` — generator for the notebook
-- `archive/` — earlier per-stage notebooks and the full-scale pipeline
