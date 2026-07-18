@@ -31,31 +31,16 @@ because MediaPipe cannot start from this folder's Hebrew path.
 
 ## Part 2: Morphing Attack Detection
 
-Reimplements the single-image morphing attack detection (S-MAD) method of
-Venkatesh, Raghavendra, Raja & Busch, "Single Image Face Morphing Attack
-Detection Using Ensemble of Features" (IEEE FUSION 2020), trained and
-evaluated on the Part 1 bona fide/morph dataset.
+Part 2 lives in [Part2_Submission/](Part2_Submission/): an implementation of
+**DMorphNet** (Gawade et al., COMPUTATIA 2026,
+[DOI 10.2991/978-94-6239-713-2_20](https://doi.org/10.2991/978-94-6239-713-2_20))
+— EfficientNet-B6 deep features + an SVM classifier for real-vs-morph
+detection. See that folder's README for the full citation, run instructions
+(local PC or Colab), and results.
 
-Run the pipeline:
+## Submission packages
 
-```powershell
-python src/train_mad.py            # trains + evaluates, writes outputs/mad/
-python src/train_mad_nn.py          # trains the neural fusion layer on top
-python src/build_mad_report_pdf.py  # renders submission_report_part2.pdf
-```
-
-Pipeline: YCbCr + HSV color-space expansion -> 3-level Laplacian pyramid ->
-LBP / HOG / BSIF descriptors per scale-space image -> a Collaborative
-Representation Classifier per descriptor stream -> sum-rule score fusion.
-Evaluated with 5-fold pair-disjoint cross-validation and the ISO/IEC 30107-3
-metrics (APCER, BPCER, D-EER).
-
-On top of that, `src/mad_nn.py` + `src/train_mad_nn.py` replace the fixed
-sum-rule fusion with a trained single-neuron logistic regression (the
-simplest possible neural network) over the same 3 out-of-fold stream
-scores: mini-batch stochastic gradient descent on binary cross-entropy,
-reporting training/test accuracy, a training-diagnostics dashboard (train
-vs. test accuracy and loss curves, plus the weight/bias trajectories), and
-the final learned weights and bias per stream. See
-`submission_report_part2.pdf` for the full method, adaptations from the
-paper, results, and limitations.
+- `Part1_Submission/` + `Part1_Submission.zip` — morphing (report, pairs,
+  morphs, code)
+- `Part2_Submission/` + `Part2_Submission.zip` — detection (article,
+  notebook, analysis report, presentation)
